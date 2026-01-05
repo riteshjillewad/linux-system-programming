@@ -1,0 +1,2 @@
+This is printed via printf, but it goes to the file!
+The terminal will not see this.
