@@ -68,6 +68,7 @@ void writeFile(const char *fileName, char string[])
     }
     printf("\nTotal file size: %d bytes\n", totalRead);
 
+    /* Free the fd after use */
     close(fd);
 }
 
