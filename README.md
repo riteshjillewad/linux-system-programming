@@ -1,0 +1,1 @@
+This repository contains practical assignments and core concepts for Linux System Programming. It focuses on low-level system calls for file I/O, directory traversal, and metadata management, demonstrating how to build robust utilities that interact directly with the Linux kernel.
