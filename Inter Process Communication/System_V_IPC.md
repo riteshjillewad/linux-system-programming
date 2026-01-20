@@ -71,3 +71,19 @@ The kernel maintains an associated data structure for each instance of a System 
 - System V IPC objects exist in kernel memory and persist until explicitly removed or the system reboots. They are not automatically cleaned up when processes terminate.
 - If a process creates a message queue and crashes without cleaning up, that queue remains in the system, consuming kernel resources. This can lead to resource exhaustion over time if not carefully managed.
 - Administrators must sometimes manually remove orphaned IPC objects using commands like `ipcrm`. The ipcs command lists all System V IPC objects on the system, showing their keys, IDs, owners, and permissions.
+
+We can use `ipcs` command to list all the System V IPC Objects on system. By default, all these categories are shown
+
+<img width="720" height="328" alt="image" src="https://github.com/user-attachments/assets/16b49193-05e8-413a-aaaa-fe587ab50cdb" />
+
+## IPC Mechanism Approaches
+There are two different approaches towards IPC
+
+### Type 1) Processes are residing on the same computer
+This type of IPC can be achieved through mechanisms such as `pipes`, `message queue`, `shared memory`, `signals`, `sockets`. It is eaiser to implement because process can share memory either in user space or system space, whic h is true for uniprocessors and multiprocessors.
+
+### Type 2) Process are residing on different computers
+This type of IPC can only be achieved through `sockets`. These do not share physical memory, they are connected via i/o devices, so process residing in different computers cannot use memory for communication.
+
+## IPC Client-Server Architecture
+In client-server architecture, the **server creates IPC objects**, while the **client can access them**. In simple, server performs IPC call specifying the flag `IPC_CREAT`, while the client omits this flag in it's `get()` call.
