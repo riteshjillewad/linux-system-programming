@@ -54,3 +54,5 @@ These books provide in-depth explanations of Linux internals, system calls, and 
 
 **Ritesh Jillewad**  
 B.Tech CSE (AI & Data Science)  
+
+> Note: This repository is under active development, and additional Linux System Programming concepts are being learned and added continuously.
