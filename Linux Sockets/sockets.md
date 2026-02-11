@@ -305,6 +305,20 @@ int main() {
 }
 ```
 
+### Server Accept Connections
+`accept()` system accepts the incoming client connection on a listening socket and creates a new socket dedicated to that client.
+* The original socket(`server_fd`) remains open and continues to listen for new people joining the queue.
+* The new socket fd is dedicated exclusively to this specific conversation with the specific client.
+
+#### **Syntax**
+```
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+```
+where,
+1. `sockfd`: Listening socket descriptor
+2. `addr`: Pointer to structure that will receive client's address (can be NULL if you don't care)
+3. `addrlen`: Pointer to size of addr structure (updated by accept())
+
 
 
 
