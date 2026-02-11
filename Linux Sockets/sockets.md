@@ -248,10 +248,62 @@ Note:
 * For Unix sockets, remove the socket file before binding if it exists
 
 
+### Marking the Socket as Passive
+The `listen()` system call marks the socket as passive (i.e it ready to accept the incoming client connections). By default when we create a socket with `socket()`, the kernel assumes it is in active state (like a client that will initiate a call), but `listen()`, flips the switch in OS kernel, that says i am not waiting for anyone, others will call me.
 
+#### **Syntax:**
+```
+int listen(int sockfd, int backlog);
+```
+where, 
+1. `sockfd`: Socket file descriptor (already bound to an address/port).
+2. `backlog`: Length of queue.
 
+#### **Backlog Queue**
+When clients try to connect, their connection requests queue up until you accept() them. The backlog parameter specifies how many pending connections can be queued. If the queue fills, new connection attempts are refused. Modern systems often have a maximum backlog limit (e.g., 128 or higher), and specifying larger values gets clamped to the maximum. <br>
+**Typical Values:**
+* Small servers: 5-10
+* Busy servers: 128 or more
+* Use SOMAXCONN for system maximum
 
+In short,
+    _"It tells the kernel, how many pending connections shoudl i keep on hold, before i start rejecting new callers"_
 
+**How the Kernel handles it:**
+* **Client Calls:** A client sends a SYN packet (Connect request).
+* **Kernel Queues It:** The OS completes the TCP Handshake (SYN $\to$ SYN-ACK $\to$ ACK) automatically.
+* **Ready State:** The connection is now "ESTABLISHED" at the TCP level, but your application hasn't touched it yet. The Kernel puts this completed connection into the Backlog Queue.
+* **Accept:** When you finally call accept(), you are simply taking the first connection off this queue.
+
+Note: After `listen()`, the socket is ready to accept connections, but does not accept any connections yet.
+
+#### **Return Value**
+* On success it returns 0, and -1 on error.
+ex:
+```
+#include <sys/socket.h>
+#include <stdio.h>
+
+int main() {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    // (Assume we filled the struct and called bind() here...)
+    // bind(server_fd, ...);
+
+    // THE LISTEN STEP
+    // We allow a "waiting room" of 10 people.
+    if (listen(server_fd, 10) < 0) {
+        perror("Listen failed");
+        return 1;
+    }
+
+    printf("Server is listening... The Ringer is ON.\n");
+    printf("Waiting for connections...\n");
+    
+    // The program continues instantly to the next step (usually accept)
+    return 0;
+}
+```
 
 
 
