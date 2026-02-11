@@ -161,8 +161,91 @@ int sock = socket(AF_INET, SOCK_DGRAM, 0);
 // IPv6 TCP socket
 int sock = socket(AF_INET6, SOCK_STREAM, 0);
 ```
+**Note: The returned socket descriptor is just like the file descriptor. We can use `close()` to close it, or use `read()` and `write()` functions.**
 
+### Binding Socket to an Address
+* The `bind()` system call assigns a socket file descriptor with a specific local address and port number.
+* Before `bind()`, socket exists, but it has no address, so nobody can reach it. After `bind()` socket is tied to a specific IP address and Port number, so the other process(client) know where to connect.
 
+**Server Side:** <br>
+On the server side it is mandatory to `bind()` the socket.
+
+**Client Side:** <br>
+It is optional, when a client connects, the OS automatically assigns it a random, unused port (called as the ephemeral port). Clients usually don't care what their own port number is, only care about the server's port.
+
+**Syntax:**
+```
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+```
+where,
+1. `sockfd`: Socket file descriptor returned from `socket()`.
+2. `addr`: Pointer to structure containing the IP address and the port we want to assign to the socket.
+3. `addrlen`: Size of the address structure (`sizeof(struct sockaddrr_in)`)
+
+**Return Value:**
+* Returns 0 on success, and -1 on error.
+
+#### Struct Address (`sockaddr_in`)
+The `bind()` function is generic. It works for UNIX sockets, IPV4, IPV6, so it accepts a generic pointer type(`struct sockaddr *`). However for the internet sockets (IPV4), we rarely use the generic struct directly. We use the IPV4 specific struct (`struct sockaddr_in`), it fills the data and then cast it to generic type.
+
+**Layout:**
+```
+struct sockaddr_in
+{
+    short                sin_family;        // Address family
+    unsigned short       sin_port;          // Port number
+    struct in_addr       sin_addr;          // IP address
+    char                 sin_zero[8];       // Padding (to match the generic strucutre)
+};
+```
+
+**Key Concepts within Bind:**
+
+**A. Byte Ordering (htons)**
+Computers store numbers in different orders (Big Endian vs. Little Endian). The Internet, however, has a strict standard: Network Byte Order (Big Endian).
+* If you just say `my_addr.sin_port = 8080;`, your computer might store it as 8080, but the network might read it as 36895 (the bytes flipped).
+**Solution:** You MUST use `htons()` (Host to Network Short).
+```
+my_addr.sin_port = htons(8080);                            // Included in the <arpa/inet.h>
+```
+
+**B. Bind Address**
+There are two options:
+* Bind to specific IP: `server_addr.sinaddr = inet_addr("192.168.1.10");`
+* Bind to all interface: `server_addr.sin_addr.s_addr = INADDR_ANY;`, It means **"accept connections from any IP address of this machine".**
+
+**Note:** Since `bind()` accepts a generic, so all the address strucutres can be cast to `struct sockaddr *` for function calls. This is how it achieves the socket independence.
+ex: since we are using IPV4 address, so in-built strucutre for it is:
+```
+struct sockaddr_in
+{
+    sa_family_t        sin_family;
+    in_port_t          sin_port;
+    struct in_addr     sin_addr;
+};
+```
+so we create the object of this strucutre `struct sockaddr_in serverAddress;`
+```
+memset(&serverAddress, 0, sizeof(serverAddress));
+
+serverAddress.sin_family = AF_INET;                                // Family
+serverAddress.sin_port = htons(8000);                              // Port number
+serverAddress.sin_addr.s_addr = INADDR_ANY;                        // Listen on any IP
+```
+
+The `serverAddress.sin_addr.s_addr = INADDR_ANY` is derived from the structure:
+```
+struct in_addr
+{
+    in_addr_t    s_addr;
+};
+```
+
+Note:
+* Port numbers < 1024 require root privileges (privileged ports)
+* INADDR_ANY (0.0.0.0) means bind to all network interfaces
+* Use htons() (host to network short) for port numbers to handle byte order
+* For Unix sockets, remove the socket file before binding if it exists
 
 
 
