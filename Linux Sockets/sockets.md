@@ -319,6 +319,149 @@ where,
 2. `addr`: Pointer to structure that will receive client's address (can be NULL if you don't care)
 3. `addrlen`: Pointer to size of addr structure (updated by accept())
 
+#### **Return Value**
+* On success it returns a new socket descriptor for the accepted connection, and -1 on error.
+
+**Note:**
+By default, `accept()` is a Blocking Call.
+
+* **Scenario:** You run your server. You call accept(). But no client has connected yet.
+* **Result:** Your program stops. It goes to sleep. It will sit there frozen forever until a client finally connects.
+* **Wake Up:** As soon as the handshake completes, the Kernel wakes up your process, accept() returns the new socket ID, and your code continues.
+
+ex:
+```
+struct sockaddr_in clientAddress;
+socklen_t clientLen = sizeof(clientAddress);
+
+int clientSocket = accept(listenSocket, (struct sockaddr *)&clientAddress, &clientLen));
+if(clientSock == -1)
+{
+    perror("accept failed");
+    return -1;
+}
+```
+Now we have two sockets:
+* `listenSocket`: Still listening for new connections.
+* `clientSocket`: Connected to this specific client.
+
+```
+sockfd()    ---------->    accept()    ---------->    clientFD() (This is used to read/write to the client by server)
+```
+
+### Connecting to Server (by client)
+The `connect()` system call is used to initiate a connection to the remove socket.
+* When we call this function, the OS kernel immediately sends a `SYN` packet(synchronize) to destination IP
+* It starts the TCP 3-Way handshake, and it automatically asks the kernel to assign random, unused local port to client, so the server knows where to send the reply.
+
+#### **Syntax**
+Almost identical to the `bind()`.
+```
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+```
+where,
+1. `sockfd`: Socket file descriptor.
+2. `addr`: Server's address
+3. `addrlen`: Size of address structure
+
+#### **Return Value**
+* It returns 0 on success (can use `send()`/`recv()`, or `read()`/`write()`) and -1 on error.
+
+#### **Blocking Nature**
+Just like the `accept()`, `connect()` is blocking by default.
+* When we call `connect()`, our program stops.
+* It waits for packet to travel to server, for the server to process it, and for repry (SYN-ACK) to arrive back.
+* If:
+  * Server replies: `connect()` returns 0.
+  * Server down: `connect()` waits for timeout (30-60 seconds) before returning -1.
+  * Server rejects: `connect()` returns -1 immediately.
+
+ex:
+```
+int main()
+{
+    int serverSocket = 0;
+    int port = 11000;
+    int ret = 0;
+
+    struct sockaddr_in serverAddress;
+    char buffer[1024] = {'\0'};
+
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if(serverSocket == -1)
+    {
+        perror("socket error");
+        return -1;
+    }
+
+    memset(&serverAddress, 0, sizeof(serverAddress));
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(port);
+
+    // Converting the IP address to binary format
+    inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr);
+
+    // Client connecting to the server
+    ret = connect(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+
+    // Client reading the data from the server
+    ret = read(serverSocket, buffer, sizeof(buffer));
+    printf("Data from the server: %s\n", buffer);
+
+    close(serverSocket);
+    return 0;
+}
+```
+
+## send() and recv() - Data Transfer (Stream Sockets)
+`send()` and `recv()` are used to transfer data over the network.
+
+1. `send()`: We ask the OS to copy the data from our applications memory (user-space) into kernel's transmit buffer. The O.S then decides when to actually pack it and push to the network card.
+2. `recv()`: We ask the OS to copy data from kernel's reciever buffer into our application's memory. If buffer is empty, our program waits.
+
+### `send()`
+Sends a message to connected socket.
+
+#### **Syntax**
+```
+size_t send(int sockfd, const void *buf, size_t len, int flags);
+```
+where,
+
+1. `sockfd`: Socket descriptor.
+2. `buf`: Pointer to data we want to send.
+3. `len`: Number of bytes we want to read.
+4. `flags`: Special options.
+   * `0`: Standar behaviour.
+   * `MSG_DONTWAIT`: Don't block if buffer is full.
+
+#### **Return Value**
+* Number of bytes actually sent (copied to kernel) on success, and -1 on error.
+
+### `recv()`
+Reads the message from the connected socket.
+
+#### **Syntax**
+```
+size_t recv(int sockfd, void *buf, size_t len, int flags);
+```
+where, 
+
+1. `sockfd`: Socket descriptor.
+2. `buf`: Pointer to empty buffer where the OS will write the incoming data
+3. `len`: Maximum size of buffer
+4. `flags`: Usually 0
+
+#### **Return Value**
+* On success, returns the number of bytes recieved i.e > 0.
+* If 0: The disconnected signal. This means the other side closed the connection politely. This is how we know the conversation is over.
+* On error, it returns -1.
+
+#### **Blocking v/s Non-Blocking**
+
+
+
+
 
 
 
