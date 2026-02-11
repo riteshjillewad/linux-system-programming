@@ -98,13 +98,69 @@ ex: File-transfers, HTTP, database connections.
 | Connection-Oriented?             | Yes                           | No                              |
 
 
+## ⚡Socket Programming Model
+Socket communication follows different modesl depending on the socket types.
+
+<img width="708" height="797" alt="image" src="https://github.com/user-attachments/assets/9b9d7298-bbcc-4d50-acb4-1e198e293616" />
+
+**Flow:**
+* Server creates a socket and waits.
+* Client creates a socket and connects.
+* Data flows in both ways.
+* Connection closes.
 
 
+### 🔀 Client-Server Stream Socket Model
 
-  
+| Server Side | Client Side |
+|-------------|-------------|
+| 1. `socket()` — Creates a socket | 1. `socket()` — Creates a socket |
+| 2. `bind()` — Binds to address (IP + Port / Filesystem path) | 2. `connect()` — Initiates connection to server |
+| 3. `listen()` — Marks socket as passive (ready to accept connections) | 3. `send()/recv()` — Exchange data with server (`write()/read()`) |
+| 4. `accept()` — Waits for client and accepts connection | 4. `close()` — Closes the connection |
+| 5. `send()/recv()` — Exchange data with client (`read()/write()`) |  |
+| 6. `close()` — Closes the connection |  |
 
+## 🧵 Core Socket Functions
 
+### Socket Creation
+* First step deals with the creation of sockets, that is the basic component for sending or recieving signals between nodes. The `sys/socket.h` header has necessary functions to create sockets in C.
 
+**Syntax:**
+```
+int socket(int domain, int type, int protocol);
+```
+where,
+1. `domain`: Represents the domain family over which communication will be performed.
+   * `AF_UNIX` or `AF_LOCAL`: UNIX domain sockets.
+   * `AF_INET`: IPV4 internet sockets.
+   * `AF_INET6`: IPV6 internet sockets.
+
+2. `type`: Represents type of communication used in the socket.
+   * `SOCK_STREAM`: Stream Socket (TCP-like)
+   * `SOCK_DGRAM`: Datagram Socket (UDP-like)
+   * `SOCK_RAW`: Raw Socket
+
+3. `protocol`: Protocol to be used in the socket, represented by number.
+   * `0`: Let the system choose appropriate protocol for domain/type.
+   * `IP_PROTOCOL`, `IPRIO_UDP`: Specific protocols.
+   
+**Return Value:**
+* Socket file descriptor on success, and -1 on error.
+ex:
+```
+// Unix domain stream socket
+int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+
+// IPv4 TCP socket
+int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+// IPv4 UDP socket
+int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+// IPv6 TCP socket
+int sock = socket(AF_INET6, SOCK_STREAM, 0);
+```
 
 
 
