@@ -458,6 +458,9 @@ where,
 * On error, it returns -1.
 
 #### **Blocking v/s Non-Blocking**
+By default, both are blocking
+
+i) Blocking `recv()`: If we call `recv()` and the incoming buffer is empty.
 
 
 
