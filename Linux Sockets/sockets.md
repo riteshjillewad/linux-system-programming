@@ -460,7 +460,33 @@ where,
 #### **Blocking v/s Non-Blocking**
 By default, both are blocking
 
-i) Blocking `recv()`: If we call `recv()` and the incoming buffer is empty.
+i) Blocking `recv()`: If we call `recv()` and the incoming buffer is empty, our program sleeps. It halts the execution completely until at least 1 byte arrives.
+ii) Blocking `send()`: If we call `send()` and the kernel's outgoing buffer is full, our program sleeps until the space opens up.
+
+ex:
+```
+void handleClient(int newSocket)
+{
+    char *message = "Hello!,who are you?\n";
+    char buffer[1024] = {0};
+
+    int bytesSent = send(newSocket, message, strlen(message), 0);
+    printf("Sent %d bytes to client.\n", bytesSent);
+
+    int valueRead = recv(newSocket, buffer, 1024, 0);
+    if(valueRead > 0)
+    {
+        printf("Client replied: %s\n", buffer);
+    }
+    else if(valueRead == 0)
+    {
+        printf("Client disconnected!\n");
+    }
+    else
+    {
+        perror("recv() failed");
+    }
+```
 
 
 
