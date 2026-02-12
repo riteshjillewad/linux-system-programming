@@ -486,14 +486,138 @@ void handleClient(int newSocket)
     {
         perror("recv() failed");
     }
+}
 ```
 
+# Socket Programming – Core Networking Concepts
+Let us now understand some fundamental networking concepts required for socket programming in C.
+* IP Address
+* Port Numbers
+* Byte Ordering
+* Why IP Address Must Be Converted to Binary
+
+## 1️⃣ IP Address
+
+### 📌 What is an IP Address?
+An IP (Internet Protocol) address is a logical identifier assigned to a device on a network. It uniquely identifies a machine in a networked environment.
+ex:
+```
+192.168.1.10 (IPv4)
+```
+
+### 📌 Structure of IPv4
+* 32-bit number
+* Divided into 4 octets (8 bits each)
+ex:
+```
+192.168.1.10 = 11000000.10101000.00000001.00001010 (binary)
+```
+
+### 📌 Usage in C Socket Programming
+In C, we use:
+```
+struct sockaddr_in server_addr;
+```
+To assign IP:
+```
+inet_pton(AF_INET, "192.168.1.10", &server_addr.sin_addr);
+```
+
+### 📌 Special IP Addresses
+* `127.0.0.1`:	Loopback (localhost)
+* `INADDR_ANY`:	Bind to all available interfaces
 
 
 
+## 2️⃣ Port Numbers
 
+### 📌 What is a Port Number?
+A port number identifies a specific application or process running on a machine.
+* IP address identifies the machine.
+* Port number identifies the application (or specific process on the machine).
+ex:
+```
+192.168.1.10 : 8080
+```
 
+### 📌 Port Numbers Range
+Port numbers are 16-bit integers:
+```
+0 – 65535
+```
+They are divided into:
+* 0–1023:	    Well-known ports
+* 1024–49151:	Registered ports
+* 49152–65535:	Dynamic / Ephemeral ports
 
+### 📌 Usage in C
+```
+server_addr.sin_port = htons(8080);
+```
+**Note: Port numbers must be converted to network byte order using `htons()`.**
+
+## 3️⃣ Byte Ordering (Endianness)
+
+### 📌 What is Byte Ordering?
+Byte ordering defines how multi-byte data is stored in memory. They are mainly of two types:
+
+### 🔹 Little-Endian (Host Order)
+Least Significant Byte first.
+ex:
+```
+0x12345678 stored as:
+78 56 34 12
+```
+
+### 🔹 Big-Endian (Network Order)
+Most Significant Byte first.
+ex:
+```
+0x12345678 stored as:
+12 34 56 78
+```
+
+Computers don't store numbers as single chunk, instead they store them in the form of bytes.(byte-by-byte), so we need to conver them to their specific endiness before passing to the network or the machine.
+
+### 📌 Conversion Functions in C
+
+* `htons()`:	Host to Network (16-bit)
+* `htonl()`:	Host to Network (32-bit)
+* `ntohs()`:	Network to Host (16-bit)
+* `ntohl()`:	Network to Host (32-bit)
+ex:
+```
+server_addr.sin_port = htons(8080);
+```
+
+## 4️⃣ Why Convert IP Address to Binary Format?
+
+### 📌 Problem
+Humans use IP addresses in string format:
+```
+"192.168.1.10"
+```
+But computers and network protocols operate using binary numeric format.
+
+### 📌 Why Conversion is Required
+
+* Network hardware processes binary data.
+* IP headers store addresses in binary form.
+* Routing decisions are made using numeric comparison.
+* String format cannot be used directly in packet headers.
+
+### 📌 Conversion in C
+We use:
+```
+inet_pton(AF_INET, "192.168.1.10", &server_addr.sin_addr);
+```
+This converts:
+```
+"192.168.1.10"        ----------->        Converts into it's 32-bit binary representation    
+```
+
+# Author
+Ritesh Jillewad
 
 
 
