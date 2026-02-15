@@ -343,7 +343,7 @@ It is used to get the address of function or variable from a shared library load
 ```
 void *dlsym(void *handle, const char *symbol);
 ```
-where, <br>
+where,<br>
 **1. `handle`:**
 The opaque pointer we got from the `dlopen()`.
 
@@ -361,7 +361,7 @@ It is used to decrease the reference count of a dynamically loaded shared librar
 ```
 int dlclose(void *handle)
 ```
-where, <br>
+where,<br>
 **1. `handle`:**
 Handle returned by `dlopen()`.
 
@@ -376,6 +376,104 @@ Handle returned by `dlopen()`.
 * On error, it returns a non-zero value.
 
 When we call `dlclose()`, the library is unloaded, any function pointers we fetched using `dlsym()`, it wont work, as it might give segmentation fault (memory freed).
+
+#### 4. `dlerror()`:
+It is used to "retrive a human-readable error message from the dynamic loader". It reports errors that occured in `dlopen()`, `dlsym()`, `dlclose()`.
+
+**Syntax:**
+```
+char *dlerror(void);
+```
+Note: calling `dlerror` cleans the error. The next call returns NULL, even if an error occurs previously.
+* It returns a string: If an error occurred since the last call, it returns a pointer to static string describing it.
+* It returns NULL: If no error occured since the last call.
+* The "clear effect", when we call `dlerror()`, it resets error state to NULL.
+```
+We cannot call dlerror() twice on the same error. The first call retrives the message, the second call returns NULL(because we just created it).
+```
+
+**Return value:**
+* If an error occured, it returns the pointer to error message string.
+* If no error, it returns NULL.
+
+**Error handling patterns**:
+1. `dlopen()`:
+```
+void *handle = dlopen("hello.so", RTLD_LAZY);
+
+if(!handle)
+{
+   printf("ERROR: %s\n", dlerror());
+   return -1;
+}
+```
+In this case:
+* If `dlopen()` fails, it always sets an error.
+* If succeeds, no error is leaved.
+
+2. `dlsym()`:
+```
+dlerror();
+
+void *sym = dlsym(handle, "add");
+char *error = dlerror();
+if(error != NULL)
+{
+   printf("ERROR: %s\n", error);
+   return -1;
+}
+```
+In this case:
+* `dlsym()` return value is `void *`.
+* `dlsym()` returns NULL if error, but a valid symbol address could also be NULL. So how do we know if null means error or actual symbol value, so we must check:
+```
+dlerror()                  ---> Clears old message
+sym = dlsym()
+error = dlerror()          ---> Checks if new error occured
+```
+
+### Flow of Commands
+Consider the following flow of commands in case of dynamic library
+```
+START
+  |
+  |
+[STEP 1] Write library source code
+file: mymath.c
+file: mymath.h
+  |
+  |
+[STEP 2] Compile an position independent code
+command: gcc -fPIC -c mymath.c
+output: mymath.o
+  |
+  |
+[STEP 3] Create shared library
+command: gcc -shared mymath.o -o libmymath.so
+output: libmymath.so
+  |
+  |
+[STEP 4] Compile and link with shared library
+command: gcc main.c -L. -lmymath -o app
+output: app (executable with library reference only)
+  |
+  |
+[STEP 5] Set library path (mostly needed)
+command: export LD_LIBRARY_PATH = ./app
+output: environment generated
+            OR
+We can use the dynamic runtime loading functions:
+  |
+  |
+[STEP 6] Run the program
+command: ./app
+output: program output.
+```
+Final executable = `main.o` + `reference` + `libmymath.o`.
+**If we delete the `.so` file, and run it, it will give error.**
+
+
+
 
 
 
