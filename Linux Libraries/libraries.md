@@ -73,6 +73,8 @@ The linker needs to know where to find the libraries. On UNIX systems, it search
 In linux, there are mainly two types of libraries:
 * Static Libraries
 * Dynamic Libraries
+<img width="1180" height="720" alt="image" src="https://github.com/user-attachments/assets/23951491-f717-4b8e-9051-a5d22707491b" />
+
 
 ## 1. Static Libraries
 Static libraries are archive of pre-compiled object files bundled together into a single file. On UNIX systems, static libraries have the `.a` extension (archieve) and are named with the `lib` prefix.
@@ -184,6 +186,27 @@ UNIX linker is a single pass. It reads the files from left to right.
   * But library is already gone (passed).
   
 **So, always put our libraries at the end of command line.**
+
+### ❌ Problem with Static Libraries
+Every program that runs the library, gets it's own copy. If we have 10 programs using the same library, we have 10 copies of code on disk.
+```
+program1   --->   500KB   (includes 100KB in library)
+program2   --->   450KB   (includes 100KB in library)
+program3   --->   480KB   (includes 100KB in library)
+total      --->   1430KB  (300 KB is duplicate library code)
+```
+If multiple process runs simultaneously, each process has it's own copy of library in RAM
+```
+RAM:
+program1   --->   Library code copy 1
+program2   --->   Library code copy 2
+program3   --->   Library code copy 3
+```
+If a bug is found in the library, we must:
+* Recompile the library.
+* Recompile every program that uses it.
+* Redistribute all the executables.
+
 
 
 
