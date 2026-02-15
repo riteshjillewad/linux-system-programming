@@ -207,6 +207,42 @@ If a bug is found in the library, we must:
 * Recompile every program that uses it.
 * Redistribute all the executables.
 
+### Flow of Commands
+Consider the following flow of commands in case of static library
+```
+START
+  |
+  |
+[STEP 1] Write library source code
+file: mymath.c
+file: mymath.h
+  |
+  |
+[STEP 2] Compile to object file
+command: gcc -c mymath.c
+output:  mymath.o
+  |
+  |
+[STEP 3] Create static library (archive)
+command: ar rcs libmymath.a mymath.o
+output: libmymath.a
+  |
+  |
+[STEP 4] Compile main and link it with static library
+command: gcc main.c -L. -lmymath -o app
+output:  app (executable with library code inside)
+ |
+ |
+[STEP 5] Run the program
+command: ./app
+output:  program output (library not required at runtime)
+ |
+ |
+END
+```
+Final executable => `main.o` + Library code (copied). <br>
+**No dependency on `libmymath.a` at runtime, even if we delete the `.a` file, app will run**
+
 ## 2. Dynamic Libraries
 **A dynamic library (also called as shared library) is compiled code that remains seperate from our executable and is loaded into memory at the runtime.** On UNIX,
 * Linux: `.so`    (shared object).
@@ -254,6 +290,8 @@ Compiling our `main.c` program looks exactly the same as static libraries.
 But if we try to run the `./app`, we will get an runtime error.
 * At compile time, we told GCC where the library was (-L.), so it built it.
 * At runtime the OS loader (`ld-linux.so`) tries to run the program, it looks for `libmymath.so` in trusted folders like `lib` or `\usr\lib`, and not look in current folder. (OS loader comes before `main()`).
+
+### `-ldl` (Link against dynamic loader library)
 
 
 
