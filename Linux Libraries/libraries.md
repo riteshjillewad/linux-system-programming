@@ -319,7 +319,7 @@ We can load the library inside our program using `dlopen()`. It is part of the `
 ```
 void *dlopen(const char *filename, int flags);
 ```
-where,
+where, <br>
 **1. `filename`:**
 This is the string containing name of dynamic library we want to load (ex: `libm.so`, `mylib\libm.so`).
 **How does OS search for the path:**
@@ -343,9 +343,40 @@ It is used to get the address of function or variable from a shared library load
 ```
 void *dlsym(void *handle, const char *symbol);
 ```
-where,
+where, <br>
 **1. `handle`:**
 The opaque pointer we got from the `dlopen()`.
+
+**2. `symbol`:**
+Name of the function or global variable as string.
+
+**Return value:**
+* On success, it returns address/pointer to symbol.
+* On failure, it returns NULL.
+
+#### 3. `dlclose()`:
+It is used to decrease the reference count of a dynamically loaded shared library and unload it when it is no longer needed.
+
+**Syntax:**
+```
+int dlclose(void *handle)
+```
+where, <br>
+**1. `handle`:**
+Handle returned by `dlopen()`.
+
+**Note:** OS does not always unloads the library:
+* It keeps the reference count for every loaded library.
+  `dlopen()` increments the count.
+  `dlclose()` decrements the count.
+* When the count is zero, only then the OS removes the code from memory and frees the resources.
+
+**Return value:**
+* On success it returns 0.
+* On error, it returns a non-zero value.
+
+When we call `dlclose()`, the library is unloaded, any function pointers we fetched using `dlsym()`, it wont work, as it might give segmentation fault (memory freed).
+
 
 
 
