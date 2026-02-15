@@ -291,7 +291,20 @@ But if we try to run the `./app`, we will get an runtime error.
 * At compile time, we told GCC where the library was (-L.), so it built it.
 * At runtime the OS loader (`ld-linux.so`) tries to run the program, it looks for `libmymath.so` in trusted folders like `lib` or `\usr\lib`, and not look in current folder. (OS loader comes before `main()`).
 
+So for temporary solution we can use the _Environment Variables_. We can tell the loader to look in your current folder (.) for this session.
+```
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+./myapp
+```
+**This type of linking is called as load-time dynamic linking.**
+
+### Types of Dynamic Linking
+In case of dynamic linking (`.so`), there are two options:
+* Load-Time Dynamic Linking  (Implicit Linking)
+* Run-Time Dynamic Loading (Explicit Linking)
+
 ### `-ldl` (Link against dynamic loader library)
+It is a special type of library, that allows our program to **"manually load other libraries at runtime".** Usually the O.S loads all the necessary libraries before our `main()`, but sometimes it wants to add library in middle of our program, so we need to use the functions provided by the `-ldl`.
 
 
 
