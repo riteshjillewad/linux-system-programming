@@ -306,6 +306,47 @@ In case of dynamic linking (`.so`), there are two options:
 ### `-ldl` (Link against dynamic loader library)
 It is a special type of library, that allows our program to **"manually load other libraries at runtime".** Usually the O.S loads all the necessary libraries before our `main()`, but sometimes it wants to add library in middle of our program, so we need to use the functions provided by the `-ldl`.
 
+**Core functions of run-time dynamic loading:**
+
+#### 1. `dlopen()`:
+`dlopen()` is used to load a shared memory (`.so`) file at runtime manually. Instead of linking it with
+```
+gcc main.c -lmylib
+```
+We can load the library inside our program using `dlopen()`. It is part of the `<dlfcn.h>`.
+
+**Syntax:**
+```
+void *dlopen(const char *filename, int flags);
+```
+where,
+**1. `filename`:**
+This is the string containing name of dynamic library we want to load (ex: `libm.so`, `mylib\libm.so`).
+**How does OS search for the path:**
+* If it contains slash (/), OS assumes it's a specific path and looks there.
+* If it contains no slash, OS searchs in standard library path.
+
+**2.`flags`:**
+This integer tells dynamic linker when and how to resolve the symbols inside library.
+* `RTLD_LAZY` (lazy binding): Resolve symbols as they're used (lazy binding, faster startup).
+* `RTLD_NOW` (Immediate binding): Resolve all symbols immediately (catches errors early).
+
+**Return value:**
+* On success, it returns a `void *` handle. It is an opaque pointer, we don't know what it points to.
+* If we call `dlopen()` twice, the OS is smart, it doesn't load the library twice, it just increments the counter.
+* On failure, it returns NULL.
+
+#### 2. `dlsym()`:
+It is used to get the address of function or variable from a shared library loaded using the `dlopen()`. It is like: **"Find me function named `add` inside the library"**.
+
+**Syntax:**
+```
+void *dlsym(void *handle, const char *symbol);
+```
+where,
+**1. `handle`:**
+The opaque pointer we got from the `dlopen()`.
+
 
 
 
