@@ -32,4 +32,28 @@ An object file (`.o`) is a compiled code that isn't yet ready to run. It contain
 ex:
 If our code calls `printf()`, the object files knows that we called it, but it does not contain the actual code for `printf()`, it comes from the library.
 
+## 🧠 Symbol Resolution and Linking
+when we write a code like,
+
+```
+#include<stdio.h>
+#include<math.h>
+
+int main()
+{
+   printf("Square root: %f\n", sqrt(25.0));
+   return 0;
+}
+```
+Above code references two functions that we didn't implement, i.e `printf()` and `sqrt()`. These are external symbols or undefined references in our object files. The linkers main job is to perform **"symbol resolution"**. Finding where these functions actually live(in libraries) and connecting our code to them. This is where difference between static and dynamic linking becomes crucial.
+
+If we compile,
+```
+gcc -c main.c        // This will create main.o (partial code)
+```
+So if we have multiple `.c` files,
+```
+main.c      ====>      main.o
+helper.c    ====>      helper.o
+
 
