@@ -77,7 +77,7 @@ In linux, there are mainly two types of libraries:
 
 
 ## 1. Static Libraries
-Static libraries are archive of pre-compiled object files bundled together into a single file. On UNIX systems, static libraries have the `.a` extension (archieve) and are named with the `lib` prefix.
+**Static libraries are archive of pre-compiled object files bundled together into a single file. **On UNIX systems, static libraries have the `.a` extension (archieve) and are named with the `lib` prefix.
 ex: `libmath.a`, `libutils.a`.
 Think it as photocopier. When we link against a static library, we are making a copy of the library code and pasting it directly inside our executable. 
 
@@ -187,7 +187,7 @@ UNIX linker is a single pass. It reads the files from left to right.
   
 **So, always put our libraries at the end of command line.**
 
-### ❌ Problem with Static Libraries
+### **Problem with Static Libraries**
 Every program that runs the library, gets it's own copy. If we have 10 programs using the same library, we have 10 copies of code on disk.
 ```
 program1   --->   500KB   (includes 100KB in library)
@@ -207,6 +207,53 @@ If a bug is found in the library, we must:
 * Recompile every program that uses it.
 * Redistribute all the executables.
 
+## 2. Dynamic Libraries
+**A dynamic library (also called as shared library) is compiled code that remains seperate from our executable and is loaded into memory at the runtime.** On UNIX,
+* Linux: `.so`    (shared object).
+* MacOS: `.dylib` (dynamic library).
+
+Dynamic libraries are like rental service. Instead of everyone owining a copy, programs "rent" access to a single shared copy when they need it. It is not copied into the executable at the compile time, instead it is linked at runtime.
+ex: GNU C Library
+```
+executable = our code + reference to library
+library = seperate shared file(.so)
+```
+
+let's now understand the working of the dynamic libraries.
+
+### **Step 1) Position Independent Code**
+* Dynamic linking requires special compilation, because they can be loaded at any memory address.
+* In case of dynamic linking, shared objects are:
+  * Loaded at runtime.
+  * Loaded at different memory address in different process.
+* So if our code used a fixed address(absolute), it would fail when loaded at different locations.
+ex:
+```
+libssl.so is a file that provides the implementation of secure network communication protocols. Since multiple programs might use libssl.so at the same time, O.S loads it into memory once:
+- Program A might see it at address 0x1000.
+- Program B might see it at address 0x9000.
+Because the code can live anywhere, so we use relative address instead of absolute address.
+
+gcc -c -fPIC add.c sub.c
+```
+so, this flag changes the assembly code. Instead of hardcoding jump address, it uses global offset table(GOT) to calculate address dynamically at runtime.
+
+### **Step 2) Creating the Shared Library**
+We don't use `ar rcs` here, instead we use,
+```
+gcc -shared -o libmymath.so add.o sub.o
+```
+where,
+* `shared`: flag tells the compiler to create a shared library instead of executable.
+
+### **Step 3) Linking the Program**
+Compiling our `main.c` program looks exactly the same as static libraries.
+* `-L.`: Look in the current folder.
+* `-lmymath`: Link against `libmymath`.
+
+But if we try to run the `./app`, we will get an runtime error.
+* At compile time, we told GCC where the library was (-L.), so it built it.
+* At runtime the OS loader (`ld-linux.so`) tries to run the program, it looks for `libmymath.so` in trusted folders like `lib` or `\usr\lib`, and not look in current folder. (OS loader comes before `main()`).
 
 
 
