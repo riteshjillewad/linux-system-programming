@@ -107,7 +107,7 @@ dlclose()
 ```
 
 ## 👤 Author
-**Ritesh Jillewad** 
+Ritesh Jillewad
 
 
 
