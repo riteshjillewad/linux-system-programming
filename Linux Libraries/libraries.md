@@ -472,6 +472,45 @@ output: program output.
 Final executable = `main.o` + `reference` + `libmymath.o`.
 **If we delete the `.so` file, and run it, it will give error.**
 
+### Difference between `RTLD_LAZY` and `RTLD_NOW`
+
+#### RTLD_LAZY — _Resolve symbols only when needed_
+```
+dlopen("./libmath.so", RTLD_LAZY);
+```
+**Meaning:**
+* Functions are NOT checked immediately
+* Symbols are resolved only when you first call them
+* Faster startup
+* Errors appear later at runtime
+
+**In simple words:**
+> “Load now, verify later.”
+
+**Example behavior: **
+* If your library is missing division():
+* dlopen() → succeeds
+* Program runs
+* When you CALL division() → crash or dlsym() error
+
+#### RTLD_LAZY — _Resolve symbols only when needed_
+```
+dlopen("./libmath.so", RTLD_NOW);
+```
+**Meaning:**
+* ALL symbols are checked during dlopen()
+* Slower startup
+* Safer
+* Errors appear immediately
+
+**In simple words:**
+> “Verify everything first, then run.”
+
+**Example behavior: **
+* If division() is missing:
+* dlopen() → FAILS immediately
+* Program never proceeds
+
 ## 👤 Author
 Ritesh Jillewad
 
