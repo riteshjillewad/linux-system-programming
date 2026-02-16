@@ -472,8 +472,9 @@ output: program output.
 Final executable = `main.o` + `reference` + `libmymath.o`.
 **If we delete the `.so` file, and run it, it will give error.**
 
-## Author
+## 👤 Author
 Ritesh Jillewad
+
 
 
 
