@@ -413,6 +413,9 @@ The `dmesg` command reaches the kernel, copies the current text out of that ring
 The kernel then jumps to memory address of our module's `__exit() function` (`my_module_exit()`) and execute it. Once the exit function finishes, kernel deletes our code from kernel space and unlinks the symbol, and frees the RAM back to system pool.
 
 
+Note: _Whatever we allocate in __inti(), we must free it in __exit()._
+
+
 
 
 
