@@ -168,7 +168,91 @@ insmod / lsmod / rmmod                syscalls                  Core Kernel     
 ### `.ko` file
 .ko (kernel object) is a compiled binary form of kernel module. It contains compiled kernel space code.
 
+```text
+Normal Execution                              Kernel Module Execution
+----------------                              -----------------------
+
+Hello.c                                       Hello.c
+   |                                             |
+Hello.i                                       Hello.i
+   |                                             |
+Hello.s                                       Hello.s
+   |                                             |
+Hello.o                                       Hello.o
+                                                |
+                                             Hello.ko
 ```
-Normal execution                                      Kernel module execution
+
+* When we compile a user-space program, we get an executable or an `.o` object file. But when we compile a kernel module, we get a `.ko` file.
+* It is a specially designed formatted ELC (Executable and Linkable format file). It contains our compiled c code, but not a standalone executable. It locks the `main()` function.
+* Like a dynamic library (`.so`), a `.ko` file contains unresolved symbols (like `printk()`). It relies on the kernel's internal linker to connect these dots at the exact moment the module is loaded into the memory.
+
+**ELF sections in the `.ko` file:**
+```
+.text          --------->    Actual code
+.data          --------->    Initialized variables
+.bss           --------->    Uninitialized variables
+.init.text     --------->    module_init() code
+.exit.text     --------->    module_exit() code
+.versions      --------->    Kernel version it was built for
+.modinfo       --------->    Metadata  (author, license, params)
+.symtable      --------->    Symbol table for linking
+```
+
+
+<img width="1308" height="679" alt="image" src="https://github.com/user-attachments/assets/78c608d8-a749-41e1-a8ff-b17082d88a29" />
+
+
+
+Since we are loading these codes at runtime and they are not the part of official linux kernel, these are called as _loadable kernel modules_ that are different from the _base kernel_. Base kernels are located in the `/boot` directory and are always loaded when we boot our machine, wherease lkm's are loaded after the kernel get's loaded.
+
+### 📄 Kernel Modules Structure
+
+consider the following code snippet,
+```c
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Ritesh Jillewad");
+MODULE_DESCRIPTION("First kernel module");
+
+static int __init hello_init(void)
+{
+    printk(KERN_INFO "Hello");
+    return 0;
+}
+
+static void __exit hello_exit(void)
+{
+    printk(KERN_INFO "Goodbye");
+}
+
+module_init(hello_init);
+module_exit(hello_exit);
+```
+
+**Note:** Kernel modules must have at least two functions defined:
+
+* **Initialization Function** – `init_module()`  
+  This function is executed when the module is **loaded into the kernel**. It is used to perform setup tasks such as initializing data structures or registering devices.
+
+* **Cleanup Function** – `cleanup_module()`  
+  This function is executed when the module is **removed from the kernel**. It is used to release allocated resources and perform necessary cleanup operations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
