@@ -318,7 +318,12 @@ module_exit(hello_exit);
 If we have used user-defined names, i.e instead of `init_module` and `clean_module`, we need to register it.
   
   
-
+## ⚙️ Compiling the `.ko` File
+To build a `.ko` file, we can't use the normal GCC comands. We need to use the kernel's internal build system.
+```c
+make -c /lib/modules/$(uname -r)/build
+```
+Internally, this `make` command will call the internal `make` command (kernel) that then builds the `.ko` file.
 
 
 
