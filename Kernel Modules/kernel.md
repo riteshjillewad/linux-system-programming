@@ -413,7 +413,29 @@ The `dmesg` command reaches the kernel, copies the current text out of that ring
 The kernel then jumps to memory address of our module's `__exit() function` (`my_module_exit()`) and execute it. Once the exit function finishes, kernel deletes our code from kernel space and unlinks the symbol, and frees the RAM back to system pool.
 
 
-Note: _Whatever we allocate in __inti(), we must free it in __exit()._
+> Note: Whatever we allocate in _init(), we must free it in _exit().
+
+
+## 📌 Complete Execution Flow
+Consider the following execution workflow.
+```text
+Step 1:   Build the Module                     (make)
+              |
+              |
+Step 2:   Load the Module                      (sudo insmod hello.ko)
+              |
+              |
+Step 3:   Display the Loaded Module            (lsmod)
+              |
+              |
+Step 4:   View Kernel Logs                     (dmesg)
+              |
+              |
+Step 5:   Remove the Loaded Module             (sudo rmmod hello)
+              |
+              |
+Step 6:   Clean Build Files                    (make clean)
+```
 
 
 
