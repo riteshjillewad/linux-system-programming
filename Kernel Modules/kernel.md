@@ -242,6 +242,84 @@ module_exit(hello_exit);
   This function is executed when the module is **removed from the kernel**. It is used to release allocated resources and perform necessary cleanup operations.
 
 
+### Header Files
+
+1. **`<linux/module.h>`**:
+   * This is the core header for loadable kernel modules. It provides us macros and functions used by the modules. It provides definitions for `MODULE_LICENSE`, `MODULE_AUTHOR`, `MODULE_DESCRIPTION`.
+   * It includes declerations related to the module initializations and cleanups, i.e `module_init()` and `module_exit()` helpers.
+   * Without these headers, kernel won't understand our code as a module
+
+2. **`<linux/kernel.h>`**:
+   * This provides common kernel utilities and macros. It provides functions such as `printk()` decleration (kernel logging function), and log-level macros such as `KERN_INFO`, `KERN_ERR`, etc.
+
+3. **`<linux/init.h>`**:
+   * It provides macros used for initialization and cleanup sections. It provides: `_inti` and `_exit` annotations.
+   * These annotations tell the kernel build system how to place the code in memory and how it can be discarded after the use.
+
+
+### Modules
+
+1. **`MODULE_LICENSE("GPL")`**:
+   * This declares the module's license. If we don't specify a compatible licence (commonly GPL), the kernel may mark itself as **"tainted"** when we try to load the module.
+   * Tainted kernel means "a non-standard/possibly propietary module is loaded", so kernel developers may refuse bug reports.
+   * Common values:
+     * GPL
+     * Dual BSD/GPL
+    
+2. **`MODULE_AUTHOR("Ritesh Jillewad")`**:
+   * Stores the author name in module info.
+
+3. **`MODULE_DESCRIPTION(...)`**:
+   * Stores short description shown in the modinfo.
+   * This section stores "module's metadata macros". These are not normal c statements, they are the macros that stores metadata inside the `.ko` files
+
+### Module Loading Functions
+
+1. **`static int hello_init(void)`**:
+   * Static indicates that the scope is only within this file. So this file cannot be accessed or called by another files.
+   * `return type`: int (the kernel expects the init function to return either success or failure).
+     * if 0: Module loads
+     * if non-zero: Module loading failed
+
+
+2. **`__init` annotation**:
+   * __init is a macro that marks this function as initialization code. It means kernel can place this function in special memory section (init section). After the module is loaded successfully, kernel may free/discard this to save the RAM.
+  
+
+3. **`printk(KERN_INFO "....")`**:
+   * `printk()` is kernel equivalent of `printf()`, but it prints into the kernel log buffer, not to our terminal directly. `printk()` will not print anything on console, but will log the message in `/var/log/kern.log`, so it is used to debug the kernel modules.
+   * There are 8 possible log-level strings, defined in headers.
+     
+     ```text
+     KERN_EMERG:  Used for emergency messages
+     KERN_ALERT:  Situation requiring immediate action
+     KERN_CRIT:   Critical conditions (hardware or software failures)
+     KERN_ERR:    Used to report error conditions (used by device drivers)
+     KERN_INFO:   Informational messages
+     ```
+     So we we use the the kernel logger function, it means write an INFO log line into the kernel logs when the module loads.
+
+
+### Module Unloading Functions
+
+1. **`static void hello_exit(void)`**:
+   * This function runs when the module is removed. Return type is void, as unload does not fall in the noraml flow.
+   * We must ensure that the cleanup is correct.
+
+2. **`_exit annotation`**:
+   * It marks this function as "exit code". For the built-in kernel code, this annotation is discarded (as built-in code isn't unloadable).
+
+3. **Cleanup responsibility**:
+   * In real modules, we must free everything we allocated inside the `init`. ex: free memory, unregister devices, stop the kernel threads, etc.
+   * In this hello module, only logs are printed, so not special cleanup is required.
+  
+
+### Function Registration
+If we have used user-defined names, i.e instead of `init_module` and `clean_module`, we need to register it.
+  
+  
+
+
 
 
 
