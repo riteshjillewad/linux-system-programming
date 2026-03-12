@@ -323,12 +323,47 @@ To build a `.ko` file, we can't use the normal GCC comands. We need to use the k
 ```c
 make -c /lib/modules/$(uname -r)/build
 ```
-Internally, this `make` command will call the internal `make` command (kernel) that then builds the `.ko` file.
+Internally, this `make` command will call the internal `make` command (kernel) that then builds the `.ko` file. It will tell, "Currently my `.c` file is in current directory and take all the modules and build them"
+ex:
+```c
+obj -m += hello.o
 
+all:
+  make -c /lib/modules/$(shell uname -r)/build M = %(PWD) modules
 
+clean:
+  make -c /lib/modules/$(shell uname -r)/build M = $(PWD) clean
+```
+so, this makefile instructs the kernel's build system to generate the `.ko` file.
+* `-c`: Changes the directory to kernel's build folder.
+* `M = $(PWD)`: Tells the kernel to return to our current directory to build our code.
 
+### Internally
+* `make` reads our local makefile. It sees the `-c /lib/modules/..../build` flag. This immediately pauses our local build and jumps into the official linux source directory on our hard drive.
+* It reads the massive, complex kernel makefiles. This sets the perfect environment (c flags, architectural settings).
+* It sees the `M = $(PWD)` flag, that tells kernel's build system, since you are fully configured, jump back to my local folder and compile the code there.
+* The `kbuild` compiles `hello.c` into `hello.o`. It then creates a secondary file called the `hello.mod.c` (contains versioning and dependency information), compiles that and links them together into final `hello.ko`.
 
+After it is compiled, the following files are generated
+```text
+hello.ko:        This is the final kernel object created.
+hello.o:         Raw, compiled object code of our c file.
+hello.mod.c/.o:  Auto-generated wrapper code by kbuild containing kernel version, checksums to ensure our module matches running O.S
+Module.symvers:  List of symbols (functions) exported by our module
+Module.order:    Keeps the track of order in which modules should be linked
+```
 
+## 📊 Kernel Modules Core Commands
+Linux provides several utilities to manage loadable kernel modules (LKMs). These commands allow us to load, remove, inspect, and get information about kernel modules.
+
+### 📥 `insmod` – Insert a Module
+To insert a module, we use the command `sudo insmod module_name.ko`.
+* The `insmod` program (in userspace) reads the entire `module_name.ko` file from our hard drive to RAM
+* It makes special system call i.e `finit_module()` or `init_module()`, passing the block of memory containing our model to kernel.
+* The kernel wakes up and allocates a highly privileged kernel space memory for our module.
+* Our `.ko` file calls functions like `printk()`. The kernel's internal linker connects unresolved references in our module to the actual memory address of the function (`hello_init()`) and runs it
+
+Note: This function is only used during the `insmod`. Once `insmod` is finished, we will never need this code again, after the setup is complete, kernel physically deletes the `_init` function from RAM to save memory.
 
 
 
