@@ -55,6 +55,78 @@ crw-r--r---  1  root  root  10,235
 drwxr-xr-x   2  root  root  10,234
 lrwxr-xr-x   1  root  root  38,400    cdrom -> sro
 ```
+Abbrevations:
+* `l`: Symbolic link (shortcut pointing to another `/dev` file)
+* `d`: Directory (group of device files)
+* `c`: Character device (character device interface)
+* `d`: Block device (block device interface)
+
+## 💾 Types of Device Drivers
+There are mainly three types of device drivers
+
+### 1️⃣ Character Device Drivers
+Character device drivers handle devices that transfer data **one character (byte) at a time**. These devices do not support random access and process data sequentially (reading a file from start to end).
+Examples of character devices include:
+
+- Keyboards
+- Mice
+- Serial ports
+- Terminals
+
+Character devices typically appear in `/dev` with a **`c` identifier**.
+
+Example
+```bash
+ls -l /dev/tty
+crw-rw-rw- 1 root root 5, 0 /dev/tty
+```
+When a user program calls the `read(fd, buffer, size)`, the kernel internally calls the driver's `driver_read()` function.
+
+### 2️⃣ Block Device Drivers
+Block device drivers manage devices that **store data in fixed-size blocks (512 bytes or 4KB) and support random access to data**. These devices are typically used for storage.
+
+Examples of block devices include:
+
+- Hard disks
+- SSDs
+- USB drives
+- CD/DVD drives
+
+Block devices appear in `/dev` with a **`b` identifier**.
+
+Example
+```bash
+ls -l /dev/sda
+brw-rw---- 1 root disk 8, 0 /dev/sda
+```
+Internally block devices use: request queues, I/O scheduler, buffer cache, page cache. So data flow direction is:
+```
+Application  ---------->  Filesystem  ---------->  Block layer  ---------->  Storage hardware
+```
+Block devices implements functions like `read_block()`, `write_block()` internally.
+
+
+### 3️⃣ Network Device Drivers
+Network device drivers manage network interface hardware and allow the system to communicate over networks. These handle the packet-based communication over a network.
+
+Unlike character and block devices, network devices do not appear as device files in /dev. Instead, they are accessed through the network stack of the kernel.
+
+Examples include:
+
+* Ethernet cards
+* Wi-Fi adapters
+* Virtual network interfaces
+
+Example network interfaces:
+```text
+eth0
+wlan0
+lo
+```
+These can be viewed using commands like:
+```
+ip a 
+```
 
 
 
