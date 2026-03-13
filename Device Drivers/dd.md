@@ -128,6 +128,37 @@ These can be viewed using commands like:
 ip a 
 ```
 
+## ✅ Devices and Drivers
+In Linux system programming, one of the most important types of **special files** are **device files**. These files provide an interface for user-space programs to interact with hardware devices through the kernel.
+
+Unlike regular files, device files do not store data on disk. Instead, operations performed on them are handled by the **corresponding device driver inside the kernel**.
+
+### 📦 What is Device ?
+A **device** is any physical or virtual hardware component that the operating system can interact with.
+
+Examples include:
+
+- Keyboard
+- GPU
+- Printer
+- Hard drives / SSDs
+- Network interfaces
+- Pseudo devices such as `/dev/null`, `/dev/zero`, and `/dev/random`
+
+These devices are represented in Linux as **special files inside the `/dev` directory**, allowing applications to communicate with hardware using standard system calls like `open()`, `read()`, `write()`, and `close()`.
+
+**Devices fall under 3 categories:**
+```text
+1) Block devices        ------->   Transfers the data in fixed-sized chunks (disks, SSD's)
+2) Character devices    ------->   Transfers the data as stream, byte-by-byte (keyboards)
+3) Network devices      ------->   Send or recieve packets (ethernet card, WIFI adapter)
+```
+
+A Device:
+* Does not understand system calls.
+* Does not understand our c code or does not directly talk to the user programs.
+* It only speaks the hardware-level signals (electrical/protocol-based).
+* It understands only bits, interrupts, registers.
 
 
 
