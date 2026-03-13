@@ -511,6 +511,34 @@ rmmod mydriver
 module_exit() → cleanup
 ```
 
+## 📦 Detailed Explanation of Steps
+
+### **Step 1) Module Initialization**
+* When we run teh `insmod mydriver.ko`, the kernel calls our driver's `init` function. This is the entry point of our driver.
+* It acts as the `main()` function for the kernel modules.
+Ex:
+```c
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/uaccess.h>
+#include <linux/fs.h>
+
+static int __init mydriver_init(void)
+{
+      printk(KERN_INFO "mydriver: Module loaded successfully\n");
+      return 0;
+}
+
+static void __exit mydriver_exit(void)
+{
+      printk(KERN_INFO "mydriver: Module removed successfully\n");
+}
+
+module_init(mydriver_init);
+module_exit(mydriver_exit);
+```
+
 
 
 
