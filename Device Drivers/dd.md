@@ -518,26 +518,84 @@ module_exit() → cleanup
 * It acts as the `main()` function for the kernel modules.
 Ex:
 ```c
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/uaccess.h>
-#include <linux/fs.h>
+#include <linux/init.h>                                                      // __init, __exit
+#include <linux/module.h>                                                    // modules, macros
+#include <linux/kernel.h>                                                    // printk, KERN_INFO, KERN_ALERT
+#include <linux/uaccess.h>                                                   // copy_to_user(), copy_from_user()             
+#include <linux/fs.h>                                                        // register_chrdev, file_operations, inodes
 
 static int __init mydriver_init(void)
 {
-      printk(KERN_INFO "mydriver: Module loaded successfully\n");
-      return 0;
+    printk(KERN_INFO "mydriver: Module loaded successfully\n");
+    return 0;
 }
 
 static void __exit mydriver_exit(void)
 {
-      printk(KERN_INFO "mydriver: Module removed successfully\n");
+    printk(KERN_INFO "mydriver: Module removed successfully\n");
 }
 
-module_init(mydriver_init);
-module_exit(mydriver_exit);
+module_init(mydriver_init);                                                  // tells the kernel to call this function on load
+module_exit(mydriver_exit);                                                  // tells the kernel to call this function on unload
 ```
+
+The macros `module_init()`, and `module_exit()`, simply registers our functions with the kernel. The kernel does not know anything about our driver, until this runs
+
+### **Step 2) Device Number Allocation**
+Before our drivers can do anything, it needs a device number (major-minor pair). The major number is how the kernel routes requests to our driver.
+```c
+majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
+```
+we made use of:
+```c
+register_chrdev(unsigned int major, const char *name, const struct file_operations *fops);
+```
+where,
+* `major`: The desired major number. If 0 is passed, the kernel dynamically allocates an available major number
+* `name`: Name for device that will appear in the `/proc/device` list.
+* `fops`: Pointer to the driver's `struct file_operations`, that defines the driver functions for operations like `read`, `write`, `open`, and `release`.
+
+Internally the kernel maintains a table (`chrdevs[]`) indexed by the major number. This call inserts out `fops` into that table. When any process opens the file with our major number, the kernel finds our `fops` through this table.
+
+### **Step 3) `cdev` Registration**
+* `dev_t` is just a number. The kernel still doesn't know what to do when that device is accessed. So we must create a `cdev`(character device) object and tell "here are my file operations", done through the `file_operations` struct (contains `read`/`write` functions).
+```c
+static struct file_operations fops = {
+      .owner = THIS_MODULE,
+      .open = dev_open,
+      .read = dev_read,
+      .write = dev_write,
+      .release = dev_release,
+};
+```
+now,
+```c
+cdev_init(&my_cdev, &fops);                        // binds fops to cdev
+my_cdev.owner = THIS_MODULE;                      
+
+cdev_add(&my_cdev, dev_num, 1);                    // register with kernel (device name, device number, number of devices)
+```
+now the kernel knows:
+```
+Major number      ---------->      my_cdev      ---------->      fops
+```
+so, when someone access this device number, we call the functions in the `fops`. But `/dev/mydevice` still does not exists. A user still cannot see it or access it.
+
+### **Step 4) Device File Creation**
+* Historically, we had to create device file using the `mknod /dev/my_device c 240 0` in the terminal to create portal. We can do it automatically by creating a class and device, and `udev` (userspace `/dev`. dynamic manager for linux, responsible to manage device nodes in `/dev` by creating or removing them when hardware is added or removed).
+* The above command creates an entry in `/sys/class/CLASS_NAME/.`
+ex:
+```c
+static struct class *charClass = NULL;
+charClass = class_create(CLASS_NAME);
+
+static struct device *charDevice = NULL;
+charDevice = device_create(charClass, NULL, MKDEV(majorNo, 0), NULL, DEVICE_NAME);
+```
+where, `MKDEV(major, minor)` -> Combines major and minor number into single `dev_t` value. 
+
+Note: After this, `udev` sees the event and automatically creates `/dev/mydevice`, **now we can see the device in `ls -l /dev/mydevice`**
+
 
 
 
