@@ -403,8 +403,112 @@ Consider the below syntax:
 ```bash
 mknod <device_name> <type> <major_number> <minor_number>
 ```
+Ex:
 ```bash
 mknod /dev/LSP c 101 0
+```
+This creates a character device, whose major number is 101 and minor number is 0. (minor numbers must be in range of 0 to 255).
+
+To view the newly created device node we can use `ls -l /dev`.
+
+Once the device node is created using `mknod`, the special device files remains unless it is explicitly deleted. Device files can be removed using the `rm` command, just like regular files.
+```bash
+rm <device_file>
+```
+Ex:
+```bash
+sudo rm /dev/LSP
+```
+
+
+## 🔄 Complete Lifecycle of a Character Device Driver
+Let us understand the **complete lifecycle of a character device driver**, from loading the driver to interacting with the device and finally unloading it.
+
+### 1. Loading the Driver
+A character device driver is loaded into the kernel using:
+```
+insmod mydriver.ko
+```
+This inserts the kernel module `(.ko file)` into the running kernel.
+
+### 2. Internal Steps Performed by the Kernel
+Once the module is loaded, the following steps occur internally:
+
+#### 1. Module Initialization
+The kernel calls the driver's initialization function (`module_init`)
+
+#### 2. Device Number Allocation
+The driver allocates a major and minor number using functions such as:
+* `alloc_chrdev_region()`
+* `register_chrdev_region()`
+
+#### 3. Character Device Structure Initialization
+The driver initializes the `cdev` structure using:
+```
+cdev_init()
+```
+
+#### 4. Registering the Device with the Kernel
+The driver registers the character device with the kernel using:
+```
+cdev_add()
+```
+
+#### 5. Device File Creation
+A device node is created in `/dev` either:
+* Manually using `mknod`, or
+* Automatically using `udev`
+
+
+### 3. User Interaction with the Device
+Once the device file exists, user-space programs can interact with the device using standard system calls:
+```
+open()
+read()
+write()
+close()
+```
+These system calls are routed to the corresponding driver functions defined in `file_operations`.
+
+
+### 4. Removing the Driver
+When the driver is no longer needed, it can be removed using:
+```
+rmmod mydriver
+```
+The kernel then calls the cleanup function (`module_exit`), which performs:
+
+* `cdev_del()` → removes the device from the kernel
+* `unregister_chrdev_region()` → releases device numbers
+* Frees allocated resources
+
+
+```
+insmod mydriver.ko
+      │
+      ▼
+module_init()
+      │
+      ▼
+Allocate Major/Minor Numbers
+      │
+      ▼
+cdev_init()
+      │
+      ▼
+cdev_add()
+      │
+      ▼
+Create Device File (/dev)
+      │
+      ▼
+User → open/read/write
+      │
+      ▼
+rmmod mydriver
+      │
+      ▼
+module_exit() → cleanup
 ```
 
 
