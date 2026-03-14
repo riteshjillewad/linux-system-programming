@@ -626,7 +626,7 @@ unlocked_ioctl      Handles device-specific control operations
 #### A) `open()`:
 The `open()` function in a device driver is called whenever a user-space program opens the device file using the `open()` system call.
 ```c
-open("/dev/myDevice", O_RDWR);
+int fd = open("/dev/myDevice", O_RDWR);
 ```
 When this happens, the Linux kernel invokes the **driver’s `open()` function defined in the `file_operations` structure.**
 
@@ -637,13 +637,137 @@ int open(struct inode *inode, struct file *file);
 * `struct inode *inode`: Represents the inode structure of the device file in the filesystem. In Linux, every file (including device files in `/dev`) has an inode, which stores metadata about that file. The driver can use the `inode` structure to **identify the device being accessed.** For example, the driver can extract the `major` and `minor` numbers, if the driver controls multiple devices, the `minor` number helps determine which device instance is being opened.
 * `struct file *file`: Represents the file structure associated with the opened file descriptor. **It represents the specific instance of the opened file.** The driver uses this structure to maintain information specific to that open instance. Multiple processes may open the same device file, and each will have its own struct file instance.
 
+**Flow**:
+```
+User Program
+      │
+      ▼
+open("/dev/mydevice")
+      │
+      ▼
+Kernel
+      │
+      ▼
+Driver open(struct inode *, struct file *)
+```
+
+**Typical `open()` implementation**
+```c
+static int dev_open(struct inode *inodep, struct file *filep)
+{
+      noOpens++;
+      printk(KERN_INFO "Device opened %d times!\n", noOpens);
+      return 0;
+}
+```
+
+#### B) `release()`:
+The `release()` function in a Linux device driver is called when a process **closes the device file**. It is the **counterpart of the `open()` function** and is executed when the user program calls:
+```c
+close(fd)
+```
+When this happens, the Linux kernel **invokes the driver's `release()` function** defined in the `file_operations` structure.
+
+**Function Prototype:**
+```c
+int release(struct inode *inode, struct file *file);
+```
+* `struct inode *inode`: Represents the inode of the device file. It can be used to identify the device (major/minor number).
+* `struct file *file`: Represents the opened file instance. Used to access driver-specific data stored during `open()`. 
+
+**Flow**:
+```
+User Program
+      │
+      ▼
+close(fd)
+      │
+      ▼
+Kernel
+      │
+      ▼
+Driver release(struct inode *, struct file *)
+```
+
+**Typical `release()` implementation**
+```c
+static int dev_release(struct inode *inodep, struct file *filep)
+{
+      printk(KERN_INFO "Device closed successfully!\n")
+      return 0;
+}
+```
 
 
+#### C) `read()`:
+The `read()` function in a Linux device driver is called when a user-space program attempts to **read data from the device file**. This happens when the program executes the `read()` system call.
+```c
+read(fd, buffer, size);
+```
+When this system call is executed, the Linux kernel invokes the driver's `read()` function defined in the `file_operations` structure.
+
+**Function Prototype:**
+```c
+ssize_t read(struct file *file, char __user *buf, size_t count, loff_t *ppos);
+```
+* `struct file *file`: Represents the open file instance. Allows driver to access device-specific data.
+* `char __user *buf`: Pointer to user-space buffer. Data will be copied from the kernel to this buffer.
+* `size_t count`: Number of bytes requested from the user. Maximum number of bytes the driver should send
+* `loff_t *ppos`: File offset pointer. Tracks the current read position.
+
+**How data transfer happens?**
+Since kernel space cannot directly access the user-space memory (security reasons), the driver must use special helper functions such as:
+```c
+copy_to_user(void __user *to, const void *from, unsigned long n);
+```
+**It copies data from kernel space to user space**. Since the memory is divided into user and kernel space for security and memory protection. If a user could directly access the kernel memory, it could crash the system, modify critical kernel data, so it does not allow direct pointer access between the user and kernel memory.
+
+**Typical `read()` implementation**
+```c
+static ssize_t dev_read(struct file *filep, char __user *buffer, size_t len, off_t *offset)
+{
+      char data[] = "Hello from kernel\n";
+      int len = strlen(data);
+
+      copy_to_user(buf, data, len);                  // buf -> user buffer(dest)  data -> kernel buffer(src)
+
+      printk(KERN_INFO "Data read from device\n");
+
+      return len;                                    // returns the bytes read
+}
+```
+The `read()` function **allows user-space programs to retrieve data from a device by copying data from kernel space to user space.**
+
+#### D) `write()`:
+The `write()` function in a Linux device driver is called when a user-space program attempts to **send data to the device**. This happens when the program executes the `write()` system call.
+```c
+write(fd, buffer, size);
+```
+When this system call is executed, the Linux kernel invokes the driver's `write()` function defined in the `file_operations` structure.
+
+#### **Function Prototype:**
+```c
+ssize_t write(struct file *file, const char __user *buf, size_t count, loff_t *ppos);
+```
+* `struct file *file`: Represents the open file instance. Allows the driver to access device-specific data.
+* `const char __user`: Pointer to user-space buffer. Data will be copied from user-space to kernel-space.
+* `size_t count`: Number of bytes send by the user. Maximum number of bytes the driver should receive.
+* `loff_t *ppos`: File offset pointer. Tracks the current write position
 
 
+#### **How Data Transfer Happens**
+The kernel cannot directly access user-space memory. Therefore, drivers must use helper functions such as:
+```c
+copy_from_user(const void *to, const void __user *from, int n);
+```
+This function safely copies data from user space to kernel space. User space programs are untrusted, as users may pass invalid pointers, pass NULL, pass malicious memory, so kernel must validate everything before copying. `__user` is special annotation that tells kernel, this pointer belongs to user.
 
 
-
+#### **Typical `write()` implementation:**
+```c
+static ssize_t dev_write(struct file *filep, const char __use *buffer, size_t len, off_t *offset)
+{
+      char kernel_buffer[256];
 
 
 
