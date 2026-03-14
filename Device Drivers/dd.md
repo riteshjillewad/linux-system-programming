@@ -817,10 +817,76 @@ Driver write() function
 Data copied from user buffer to kernel
 ```
 
+### **Step 6) Module exit cleanup**
+When we run the command `mydriver`, the kernel calls out the `exit` function. We must undo everything we did inside `init` in reverse order. Failing to do so may cause memory leaks and the kernel may panic.
+```c
+static void __exit char_exit(void)
+{
+      // Removing the device file (udev will delete /dev/myDevice)
+      device_destroy(charClass, MKDEV(majorNumber, 0));
+
+      // Destroy the class
+      class_destroy(charClass);
+
+      // Unregister the cdev
+      unregister_chrdev(majorNumber, DEVICE_NAME);
+
+      // Release the device number
+      printk(KERN_INFO "Driver unloaded successfully!\n");
+}
+```
+If any of the above step is skipped, the next `insmod` may fail or we may corrupt the kernel data structure.
 
 
+### 💡 Concept Overview
+
+| Concept | What it is | What it does |
+|--------|------------|--------------|
+| **dev_t** | A data type used by the Linux kernel to store device numbers | Holds the **major and minor numbers** that uniquely identify a device |
+| **alloc_chrdev_region()** | Kernel function used to dynamically allocate device numbers | Assigns a **major number and a range of minor numbers** for a character device driver |
+| **cdev** | Kernel structure representing a **character device** | Connects the device number with the **driver’s file operations** so the kernel knows how to handle device requests |
+| **file_operations** | A structure containing function pointers for device operations | Defines how the driver handles system calls like **open(), read(), write(), and release()** |
+| **class_create() + device_create()** | Kernel functions used for device registration | Creates a **device class and device node**, allowing `udev` to automatically generate the device file in `/dev` |
+| **copy_to_user() / copy_from_user()** | Kernel helper functions for memory transfer | Safely copies data between **kernel space and user space** |
+| **exit cleanup** | Cleanup operations performed when a driver is removed | Frees allocated resources using functions like **cdev_del(), unregister_chrdev_region(), and device_destroy()** |
 
 
+### 🧠 Complete Flow
+```text
+insmod mydriver.ko
+|
+|__ mydriver_init()
+|      |
+|      |__ alloc_chrdev_region()            (reserves (major, minor) /proc/devices shows entry)
+|      |
+|      |__ cdev_init() + cdev_add()         (connects fops to device number, kernel can now route calls)
+|      |
+|      |__ class_create()                   (creates /sys/class/mydriver_class)
+|      |      
+|      |__ device_create()                  (udev creates /dev/mydevice)
+|
+|
+|      (driver is now live and usable)
+|
+|
+|
+|______ user calls open("/dev/mydevice");   (mydriver_open())
+|______ user calls read(fd, buf, n);        (mydriver_read())
+|______ user calls write(fd, buf, n);       (mydriver_write())
+|______ user calls close(fd);               (mydriver_release())
+|
+|
+|
+|
+rmmod mydriver.ko
+|
+|______ mydriver_exit()
+            |
+            |__ device_destroy()            (udev removes /dev/mydevice)
+            |__ class_destroy()             (removes /sys/class entry)
+            |__ cdev_del()                  (unlinks fops from device number)
+            |__ unregister_chrdev_region()  (releases major/minor number)
+```
 
 
 
