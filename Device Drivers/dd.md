@@ -594,7 +594,52 @@ charDevice = device_create(charClass, NULL, MKDEV(majorNo, 0), NULL, DEVICE_NAME
 ```
 where, `MKDEV(major, minor)` -> Combines major and minor number into single `dev_t` value. 
 
-Note: After this, `udev` sees the event and automatically creates `/dev/mydevice`, **now we can see the device in `ls -l /dev/mydevice`**
+**Note:** After this, `udev` sees the event and automatically creates `/dev/mydevice`, **now we can see the device in `ls -l /dev/mydevice`**
+
+#### `udev`
+`udev` is a device manager for the Linux kernel that automatically creates and manages device files in the /dev directory. When hardware devices are connected, removed, or detected, `udev` dynamically creates or removes the corresponding device nodes.
+
+### **Step 5) File Operations**
+This is where the real work happens, when a user process calls `open()`, `read()`, `write()` on `dev/mydevice`, the kernel calls our corrosponding function from the `fops`. `struct file_operations` is a data structure in the Linux kernel that **defines how a device driver handles file-related operations such as opening, reading, writing, and closing a device.** Since Linux follows the principle “everything is a file”, devices are accessed through device files in `/dev`. When a user program performs operations like `open()`, `read()`, or `write()` on a device file, the kernel calls the corresponding functions defined in the `file_operations` structure of the device driver.
+
+The structure is defined in the `#include <linux/fs.h>`.
+
+Ex:
+```c
+struct file_operations fops = {
+    .owner = THIS_MODULE,
+    .open = my_open,
+    .read = my_read,
+    .write = my_write,
+    .release = my_close,
+};
+```
+Here each field points to a **function implemented inside the driver**. Common functions implemented inside the `file_operations` structure is:
+```text
+open                Called when the device file is opened.
+read                Called when data is read from the device.  
+write               Called when data is written to the device.
+realease            Called when device file is closed.
+unlocked_ioctl      Handles device-specific control operations
+```
+
+#### A) `open()`:
+The `open()` function in a device driver is called whenever a user-space program opens the device file using the `open()` system call.
+```c
+open("/dev/myDevice", O_RDWR);
+```
+When this happens, the Linux kernel invokes the **driver’s `open()` function defined in the `file_operations` structure.**
+
+**Function Prototype:**
+```c
+int open(struct inode *inode, struct file *file);
+```
+* `struct inode *inode`: Represents the inode structure of the device file in the filesystem. In Linux, every file (including device files in `/dev`) has an inode, which stores metadata about that file. The driver can use the `inode` structure to **identify the device being accessed.** For example, the driver can extract the `major` and `minor` numbers, if the driver controls multiple devices, the `minor` number helps determine which device instance is being opened.
+* `struct file *file`: Represents the file structure associated with the opened file descriptor. **It represents the specific instance of the opened file.** The driver uses this structure to maintain information specific to that open instance. Multiple processes may open the same device file, and each will have its own struct file instance.
+
+
+
+
 
 
 
