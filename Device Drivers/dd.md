@@ -738,6 +738,26 @@ static ssize_t dev_read(struct file *filep, char __user *buffer, size_t len, off
 ```
 The `read()` function **allows user-space programs to retrieve data from a device by copying data from kernel space to user space.**
 
+**Execution flow:**
+```text
+User Program
+      │
+      ▼
+read(fd, buffer, size)
+      │
+      ▼
+Kernel
+      │
+      ▼
+file_operations.read
+      │
+      ▼
+Driver read() function
+      │
+      ▼
+Data copied from kernel buffer to user
+```
+
 #### D) `write()`:
 The `write()` function in a Linux device driver is called when a user-space program attempts to **send data to the device**. This happens when the program executes the `write()` system call.
 ```c
@@ -745,7 +765,7 @@ write(fd, buffer, size);
 ```
 When this system call is executed, the Linux kernel invokes the driver's `write()` function defined in the `file_operations` structure.
 
-#### **Function Prototype:**
+**Function Prototype:**
 ```c
 ssize_t write(struct file *file, const char __user *buf, size_t count, loff_t *ppos);
 ```
@@ -755,7 +775,7 @@ ssize_t write(struct file *file, const char __user *buf, size_t count, loff_t *p
 * `loff_t *ppos`: File offset pointer. Tracks the current write position
 
 
-#### **How Data Transfer Happens**
+**How Data Transfer Happens**
 The kernel cannot directly access user-space memory. Therefore, drivers must use helper functions such as:
 ```c
 copy_from_user(const void *to, const void __user *from, int n);
@@ -763,11 +783,39 @@ copy_from_user(const void *to, const void __user *from, int n);
 This function safely copies data from user space to kernel space. User space programs are untrusted, as users may pass invalid pointers, pass NULL, pass malicious memory, so kernel must validate everything before copying. `__user` is special annotation that tells kernel, this pointer belongs to user.
 
 
-#### **Typical `write()` implementation:**
+**Typical `write()` implementation:**
 ```c
-static ssize_t dev_write(struct file *filep, const char __use *buffer, size_t len, off_t *offset)
+static ssize_t my_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
 {
-      char kernel_buffer[256];
+    char kernel_buffer[100];
+
+    copy_from_user(kernel_buffer, buf, count);
+
+    printk(KERN_INFO "Data received from user: %s\n", kernel_buffer);
+
+    return count;
+}
+```
+
+**Execution Flow:**
+```text
+User Program
+      │
+      ▼
+write(fd, buffer, size)
+      │
+      ▼
+Kernel
+      │
+      ▼
+file_operations.write
+      │
+      ▼
+Driver write() function
+      │
+      ▼
+Data copied from user buffer to kernel
+```
 
 
 
