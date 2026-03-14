@@ -857,23 +857,23 @@ insmod mydriver.ko
 |
 |__ mydriver_init()
 |      |
-|      |__ alloc_chrdev_region()            (reserves (major, minor) /proc/devices shows entry)
+|      |__ alloc_chrdev_region()                  (reserves (major, minor) /proc/devices shows entry)
 |      |
-|      |__ cdev_init() + cdev_add()         (connects fops to device number, kernel can now route calls)
+|      |__ cdev_init() + cdev_add()               (connects fops to device number, kernel can now route calls)
 |      |
-|      |__ class_create()                   (creates /sys/class/mydriver_class)
+|      |__ class_create()                         (creates /sys/class/mydriver_class)
 |      |      
-|      |__ device_create()                  (udev creates /dev/mydevice)
+|      |__ device_create()                        (udev creates /dev/mydevice)
 |
 |
 |      (driver is now live and usable)
 |
 |
 |
-|______ user calls open("/dev/mydevice");   (mydriver_open())
-|______ user calls read(fd, buf, n);        (mydriver_read())
-|______ user calls write(fd, buf, n);       (mydriver_write())
-|______ user calls close(fd);               (mydriver_release())
+|______ user calls open("/dev/mydevice");         (mydriver_open())
+|______ user calls read(fd, buf, n);              (mydriver_read())
+|______ user calls write(fd, buf, n);             (mydriver_write())
+|______ user calls close(fd);                     (mydriver_release())
 |
 |
 |
@@ -882,10 +882,10 @@ rmmod mydriver.ko
 |
 |______ mydriver_exit()
             |
-            |__ device_destroy()            (udev removes /dev/mydevice)
-            |__ class_destroy()             (removes /sys/class entry)
-            |__ cdev_del()                  (unlinks fops from device number)
-            |__ unregister_chrdev_region()  (releases major/minor number)
+            |__ device_destroy()                  (udev removes /dev/mydevice)
+            |__ class_destroy()                   (removes /sys/class entry)
+            |__ cdev_del()                        (unlinks fops from device number)
+            |__ unregister_chrdev_region()        (releases major/minor number)
 ```
 
 
