@@ -77,7 +77,7 @@ In linux, there are mainly two types of libraries:
 
 
 ## 1. Static Libraries
-**Static libraries are archive of pre-compiled object files bundled together into a single file. **On UNIX systems, static libraries have the `.a` extension (archieve) and are named with the `lib` prefix.
+**Static libraries are archive of pre-compiled object files bundled together into a single file.** On UNIX systems, static libraries have the `.a` extension (archieve) and are named with the `lib` prefix.
 ex: `libmath.a`, `libutils.a`.
 Think it as photocopier. When we link against a static library, we are making a copy of the library code and pasting it directly inside our executable. 
 
